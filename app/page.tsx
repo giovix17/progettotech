@@ -1,265 +1,30 @@
-'use client';
+"use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { FormEvent, useMemo, useState } from "react";
+import { ContentType, VideoStyle } from "@/lib/content";
+import { createDurationBudget } from "@/lib/duration";
 
-import React, { useState } from 'react';
+const durations = [15, 20, 30, 45, 60, 90, 120];
+const types: { value: ContentType; label: string }[] = [{ value: "auto", label: "Auto" }, { value: "news", label: "News" }, { value: "explainer", label: "Explainer" }, { value: "review", label: "Review" }, { value: "comparison", label: "X vs Y" }, { value: "ranking", label: "Ranking" }, { value: "opinion", label: "Opinion" }, { value: "tutorial", label: "Tutorial" }, { value: "storytelling", label: "Storytelling" }];
+const styles: { value: VideoStyle; label: string }[] = [{ value: "faceless-voiceover", label: "Faceless voiceover" }, { value: "screen-recording", label: "Screen recording" }, { value: "product-focus", label: "Product focus" }, { value: "news-fast", label: "News fast-paced" }, { value: "cinematic-tech", label: "Cinematic tech" }, { value: "explainer", label: "Explainer" }, { value: "list-ranking", label: "List / ranking" }, { value: "storytelling", label: "Storytelling" }, { value: "hybrid", label: "Hybrid" }];
+const tabs = ["Overview", "Script", "Storyboard", "Record", "Edit", "Publish", "Test"] as const;
 
 export default function Page() {
-  const [topic, setTopic] = useState('');
-  const [targetProduct, setTargetProduct] = useState('');
-  const [rawScript, setRawScript] = useState('');
-  const [videoStyle, setVideoStyle] = useState('Faceless Tech Review (Ritmo Serrato)');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any | null>(null);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
-
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, targetProduct, rawScript, videoStyle }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `Errore del server: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        setResult(data.data);
-      }
-    } catch (err: any) {
-      console.error(err);
-      alert(err.message || 'Errore durante la generazione.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const copyToClipboard = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2000);
-  };
-
-  return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-12 font-sans">
-      <div className="max-w-6xl mx-auto space-y-8">
-        
-        {/* Header */}
-        <div className="border-b border-slate-800 pb-6">
-          <div className="inline-block px-3 py-1 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold rounded-full mb-3">
-            Faceless Creator Edition • Voice & Graphics Suite
-          </div>
-          <h1 className="text-3xl md:text-4xl font-black bg-gradient-to-r from-cyan-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent">
-            Faceless Studio & Voiceover Controller
-          </h1>
-          <p className="text-slate-400 mt-2 text-sm">
-            Ottimizzato per registrazioni vocali reali, overlay grafici 2D/3D, screen-recording e asset visivi unici.
-          </p>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleGenerate} className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-2xl">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Argomento / Topic</label>
-              <input 
-                type="text" 
-                value={topic} 
-                onChange={(e) => setTopic(e.target.value)} 
-                placeholder="Es. Guida ai comandi terminale per sviluppatori" 
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-cyan-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Prodotto / Sponsor (Opzionale)</label>
-              <input 
-                type="text" 
-                value={targetProduct} 
-                onChange={(e) => setTargetProduct(e.target.value)} 
-                placeholder="Es. VS Code Extension" 
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-cyan-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Stile Video Faceless</label>
-              <select
-                value={videoStyle}
-                onChange={(e) => setVideoStyle(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-cyan-500"
-              >
-                <option value="Faceless Tech Review (Ritmo Serrato)">Faceless Tech (Ritmo Serrato)</option>
-                <option value="Minimal & Dark Mode">Minimal & Dark Mode UI</option>
-                <option value="Educational Screen-Recording">Educational / Screen Recording Focus</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Punti Chiave Video</label>
-            <textarea 
-              rows={3}
-              value={rawScript} 
-              onChange={(e) => setRawScript(e.target.value)} 
-              placeholder="Inserisci i punti principali..." 
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 resize-none"
-              required
-            />
-          </div>
-
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-cyan-500 to-indigo-600 font-extrabold text-slate-950 py-3.5 rounded-xl text-sm hover:opacity-90 cursor-pointer disabled:opacity-50 transition-all shadow-xl shadow-cyan-500/10"
-          >
-            {loading ? 'Generazione script con marcatori vocali & grafica...' : 'Genera Pacchetto Faceless Completo'}
-          </button>
-        </form>
-
-        {/* Results */}
-        {result && (
-          <div className="space-y-8">
-
-            {/* 1. VOICEOVER PACING & BREATHING GUIDE */}
-            {result.voiceoverGuide && (
-              <div className="bg-slate-900 border border-cyan-500/40 rounded-2xl p-6 space-y-4 shadow-2xl">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <span className="text-xs font-extrabold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
-                      🎙️ Voiceover Pacing & Breathing Guide (Per Registrazione Microfono)
-                    </span>
-                    <p className="text-xs text-slate-400 mt-1">Usa questa versione sul leggio/monitor mentre registri la tua voce.</p>
-                  </div>
-                  <button 
-                    onClick={() => copyToClipboard(result.voiceoverGuide, 'vo-guide')}
-                    className="text-xs bg-cyan-950 hover:bg-cyan-900 text-cyan-300 px-3 py-1.5 rounded-lg border border-cyan-700/50 transition-all cursor-pointer"
-                  >
-                    {copiedKey === 'vo-guide' ? '✓ Copiato' : '📋 Copia Guida Registrazione'}
-                  </button>
-                </div>
-                <div className="bg-slate-950 border border-slate-800 p-5 rounded-xl text-slate-200 text-sm font-mono whitespace-pre-line leading-relaxed">
-                  {result.voiceoverGuide}
-                </div>
-              </div>
-            )}
-
-            {/* 2. ON-SCREEN GRAPHICS & OVERLAYS */}
-            {result.onScreenGraphics && (
-              <div className="bg-slate-900 border border-purple-500/30 rounded-2xl p-6 space-y-4">
-                <span className="text-xs font-extrabold text-purple-400 uppercase tracking-wider">
-                  🖥️ On-Screen Graphics & Text Overlay Blueprint
-                </span>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {result.onScreenGraphics.map((item: any, idx: number) => (
-                    <div key={idx} className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-mono text-cyan-400 font-bold">⏱️ {item.timestamp}</span>
-                        <span className="bg-purple-950 text-purple-300 px-2 py-0.5 rounded text-[10px] font-bold border border-purple-800/40">
-                          {item.graphicType}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-200 font-medium">{item.description}</p>
-                      <div className="text-[11px] text-slate-400 border-t border-slate-900 pt-2">
-                        ✨ Animazione: <strong className="text-slate-300">{item.animationStyle}</strong>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 3. SCREEN RECORDING ACTION PLAN */}
-            {result.screenRecordPlan && (
-              <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 space-y-4">
-                <span className="text-xs font-extrabold text-emerald-400 uppercase tracking-wider">
-                  📹 Screen Recording & Live Demo Action Plan
-                </span>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {result.screenRecordPlan.map((rec: any, idx: number) => (
-                    <div key={idx} className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2 flex flex-col justify-between">
-                      <div>
-                        <div className="flex justify-between text-xs mb-2">
-                          <span className="font-mono text-emerald-400 font-bold">Step #{rec.step}</span>
-                          <span className="text-slate-500 text-[10px]">{rec.duration}</span>
-                        </div>
-                        <p className="text-xs text-slate-200 font-semibold">{rec.action}</p>
-                      </div>
-                      <div className="text-[11px] text-slate-400 bg-slate-900 p-2 rounded border border-slate-800/80 mt-2">
-                        🔍 Zoom Target: <span className="text-slate-300">{rec.zoomFocus}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 4. MIDJOURNEY PROMPTS PER ASSET FACELESS */}
-            {result.midjourneyPrompts && (
-              <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-6 space-y-4">
-                <span className="text-xs font-extrabold text-amber-400 uppercase tracking-wider">
-                  🎨 Prompt Midjourney / DALL-E per Sfondi & Grafiche Uniche
-                </span>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {result.midjourneyPrompts.map((mj: any, idx: number) => (
-                    <div key={idx} className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-amber-300">{mj.assetName}</span>
-                        <span className="font-mono text-[10px] bg-slate-900 text-slate-400 px-2 py-0.5 rounded">{mj.aspectRatio}</span>
-                      </div>
-                      <div className="bg-slate-900 p-3 rounded-lg font-mono text-[11px] text-slate-300 relative group">
-                        <p className="pr-12">{mj.prompt}</p>
-                        <button
-                          onClick={() => copyToClipboard(mj.prompt, `mj-${idx}`)}
-                          className="absolute top-2 right-2 bg-amber-600 hover:bg-amber-500 text-slate-950 text-[10px] font-bold px-2 py-1 rounded cursor-pointer"
-                        >
-                          {copiedKey === `mj-${idx}` ? '✓' : 'Copia'}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* A/B HOOKS & CTA */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {result.abHooks && (
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
-                  <span className="text-xs font-extrabold text-cyan-400 uppercase tracking-wider">🎯 Intro A/B Testing</span>
-                  <div className="space-y-3">
-                    {result.abHooks.map((h: any, i: number) => (
-                      <div key={i} className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
-                        <span className="text-[10px] text-cyan-400 font-bold uppercase">{h.angle}</span>
-                        <p className="text-slate-200 font-medium">&ldquo;{h.script}&rdquo;</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {result.ctaStrategies && (
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
-                  <span className="text-xs font-extrabold text-emerald-400 uppercase tracking-wider">⚡ Opzioni CTA</span>
-                  <div className="space-y-3">
-                    {result.ctaStrategies.map((c: any, i: number) => (
-                      <div key={i} className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
-                        <span className="text-[10px] text-emerald-400 font-bold uppercase">{c.objective}</span>
-                        <p className="text-slate-200 font-medium">&ldquo;{c.scriptLine}&rdquo;</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-          </div>
-        )}
-
-      </div>
-    </main>
-  );
+  const [topic, setTopic] = useState(""); const [notes, setNotes] = useState(""); const [product, setProduct] = useState(""); const [duration, setDuration] = useState(30);
+  const [contentType, setContentType] = useState<ContentType>("auto"); const [videoStyle, setVideoStyle] = useState<VideoStyle>("faceless-voiceover"); const [tone, setTone] = useState("Smart"); const [researchMode, setResearchMode] = useState(false);
+  const [strategy, setStrategy] = useState<any>(); const [angle, setAngle] = useState(""); const [hook, setHook] = useState(""); const [result, setResult] = useState<any>(); const [loading, setLoading] = useState(false); const [error, setError] = useState(""); const [tab, setTab] = useState<(typeof tabs)[number]>("Overview");
+  const budget = useMemo(() => createDurationBudget(duration, "natural", contentType), [duration, contentType]);
+  const input = { topic, notes, product, duration, contentType, videoStyle, tone, language: "it", researchMode, selectedAngle: angle, selectedHook: hook, speakingRate: "natural" as const };
+  async function call(stage: "strategy" | "generate") { setLoading(true); setError(""); try { const response = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ input, stage }) }); const body = await response.json(); if (!response.ok) throw new Error(body.error); if (stage === "strategy") { setStrategy(body.data); setAngle(body.data.angles[0]?.title || ""); setHook(body.data.hooks[0]?.text || ""); } else setResult(body.data); } catch (cause) { setError(cause instanceof Error ? cause.message : "Errore di generazione."); } finally { setLoading(false); } }
+  const Card = ({ children, active, onClick }: { children: React.ReactNode; active?: boolean; onClick?: () => void }) => <button type="button" onClick={onClick} className={`rounded-xl border p-3 text-left transition ${active ? "border-cyan-400 bg-cyan-400/10" : "border-white/10 bg-white/[.03] hover:border-white/25"}`}>{children}</button>;
+  return <main className="min-h-screen px-4 py-7 text-slate-100 md:px-10"><div className="mx-auto max-w-7xl space-y-7"><header className="flex flex-col gap-4 border-b border-white/10 pb-6 md:flex-row md:items-end md:justify-between"><div><p className="eyebrow">AI CONTENT STUDIO · TIKTOK FIRST</p><h1 className="mt-2 text-3xl font-black tracking-tight md:text-5xl">Dall’idea al video,<br /><span className="gradient-text">senza indovinare il processo.</span></h1></div><div className="stat"><span>Duration Engine</span><strong>{duration}s · {budget.targetWords} parole</strong></div></header>
+    <form onSubmit={(e: FormEvent) => { e.preventDefault(); call("strategy"); }} className="panel space-y-7"><div className="section-title"><span className="step">01</span><div><h2>Che video vuoi creare?</h2><p>Parti da un argomento: gli altri campi sono solo contesto.</p></div></div><div className="grid gap-4 md:grid-cols-2"><label>Idea / argomento<input required value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Es. Perché NVIDIA vale così tanto?" /></label><label>Prodotto (opzionale)<input value={product} onChange={(e) => setProduct(e.target.value)} placeholder="Es. iPhone 17 Pro" /></label></div><label>Note personali<textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Angolo, informazioni note, esperienza personale…" /></label>
+      <section><div className="section-title"><span className="step">02</span><div><h2>Che tipo di contenuto?</h2><p>Auto sceglie il formato più adatto al topic.</p></div></div><div className="choice-grid">{types.map((item) => <Card key={item.value} active={contentType === item.value} onClick={() => setContentType(item.value)}><strong>{item.label}</strong></Card>)}</div></section>
+      <section><div className="section-title"><span className="step">03</span><div><h2>Quanto deve durare?</h2><p>Influenza script, ritmo e montaggio.</p></div></div><div className="choice-grid duration-grid">{durations.map((seconds) => <Card key={seconds} active={duration === seconds} onClick={() => setDuration(seconds)}><strong>{seconds}s</strong></Card>)}<label className="custom">Custom<input type="number" min="10" max="180" value={duration} onChange={(e) => setDuration(Number(e.target.value))} /></label></div><div className="budget"><span>Target {budget.targetWords} parole</span><span>Range {budget.acceptableWordRange.min}–{budget.acceptableWordRange.max}</span><span>{budget.pauseBudget}s pause previste</span></div></section>
+      <section className="grid gap-4 md:grid-cols-3"><label>Stile<select value={videoStyle} onChange={(e) => setVideoStyle(e.target.value as VideoStyle)}>{styles.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label><label>Tono<select value={tone} onChange={(e) => setTone(e.target.value)}>{["Smart", "Conversational", "Energetic", "Premium", "Funny", "Provocative", "Educational", "Analytical"].map((item) => <option key={item}>{item}</option>)}</select></label><label className="research"><input type="checkbox" checked={researchMode} onChange={(e) => setResearchMode(e.target.checked)} /> Research mode <small>Segnala claim da verificare</small></label></section><button className="primary" disabled={loading}>{loading ? "Sto ragionando sul contenuto…" : "Trova angolo e hook"}</button>{error && <p className="error">{error}</p>}</form>
+    {strategy && <section className="panel space-y-6"><div className="section-title"><span className="step">04</span><div><h2>Scegli il punto di vista e l’apertura</h2><p>{strategy.topicAnalysis?.whyItMatters}</p></div></div><div><h3>Content angles</h3><div className="grid gap-3 md:grid-cols-3">{strategy.angles.map((item: any) => <Card key={item.title} active={angle === item.title} onClick={() => setAngle(item.title)}><b>{item.score}/100</b><strong>{item.title}</strong><p>{item.rationale}</p></Card>)}</div></div><div><h3>Hook engine</h3><div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{strategy.hooks.map((item: any) => <Card key={item.text} active={hook === item.text} onClick={() => setHook(item.text)}><b>{item.type} · {item.score}/100</b><strong>“{item.text}”</strong><p>Visual: {item.visual}</p></Card>)}</div></div><button className="primary" type="button" disabled={loading} onClick={() => call("generate")}>{loading ? "Sto costruendo il video…" : `Genera video da ${duration}s`}</button></section>}
+    {result && <section className="space-y-5"><nav className="tabs">{tabs.map((item) => <button key={item} className={tab === item ? "active" : ""} onClick={() => setTab(item)}>{item}</button>)}</nav><Output tab={tab} result={result} /></section>}</div></main>;
 }
+function Output({ tab, result }: { tab: string; result: any }) { if (tab === "Overview") return <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]"><div className="panel"><p className="eyebrow">{result.script.title}</p><h2 className="mt-2 text-2xl font-bold">{result.strategy.selectedAngle}</h2><p className="mt-4 text-lg">“{result.hooks[0]?.text}”</p><div className="score-row">{[["Content", result.strategy.contentScore], ["Retention", result.strategy.retentionScore], ["Durata", result.metadata.durationTarget]].map(([label, value]) => <div key={String(label)} className="stat"><span>{label}</span><strong>{value}{label === "Durata" ? "s" : "/100"}</strong></div>)}</div></div><div className="panel"><h3>Duration check</h3><p className={result.metadata.status === "within-target" ? "ok" : "warning"}>{result.metadata.status === "within-target" ? "✓ Dentro il target" : "⚠ Da rivedere"}</p><p>{result.metadata.wordCount} / {result.metadata.wordTarget} parole · {result.metadata.durationEstimated}s stimati · {result.metadata.wpm} WPM</p>{result.warnings?.map((warning: string) => <p className="warning" key={warning}>{warning}</p>)}</div></div>; if (tab === "Script") return <div className="grid gap-5 lg:grid-cols-2"><TextPanel title="Clean script" body={result.script.clean} /><TextPanel title="Performance script" body={result.voiceoverGuide} /></div>; if (tab === "Storyboard") return <div className="panel"><h2>Timeline visuale</h2><div className="timeline">{result.timeline.map((part: any) => <article key={part.startTime} style={{ flexGrow: part.duration }}><b>{part.startTime}s–{part.endTime}s</b><strong>{part.section}</strong><span>{part.visual}</span><small>{part.overlayText}</small></article>)}</div><div className="list">{result.timeline.map((part: any) => <article key={part.startTime}><b>{part.startTime}s · {part.section}</b><p>{part.spokenText}</p><p>Visual: {part.visual} · {part.editingInstruction}</p></article>)}</div></div>; if (tab === "Record") return <div className="grid gap-5 lg:grid-cols-2"><TextPanel title="Voiceover guide" body={result.voiceoverGuide} /><ListPanel title="Shot list" items={result.bRollPlan.map((x: any) => `${x.shot}: ${x.visual} — ${x.action}`)} /><ListPanel title="Screen recording" items={result.screenRecordPlan.map((x: any) => `${x.step}. ${x.action} (${x.zoomFocus})`)} /></div>; if (tab === "Edit") return <div className="grid gap-5 lg:grid-cols-2"><ListPanel title="Editing timeline" items={result.editingPlan} /><ListPanel title="Subtitles" items={result.subtitles} /><ListPanel title="On-screen graphics" items={result.onScreenGraphics.map((x: any) => `${x.graphicType}: ${x.description} (${x.animationStyle})`)} /></div>; if (tab === "Publish") return <div className="grid gap-5 lg:grid-cols-2"><TextPanel title="Caption" body={result.publishing.caption} /><ListPanel title="Hashtag selezionati" items={result.publishing.hashtags} /><ListPanel title="Keyword" items={result.publishing.keywords} /><TextPanel title="CTA" body={result.publishing.cta} /></div>; return <div className="grid gap-5 lg:grid-cols-2"><ListPanel title="A/B hooks" items={result.abHooks.map((x: any) => `${x.angle}: ${x.script} — ${x.visualAction}`)} /><ListPanel title="Retention risks" items={result.retentionRisks} /><ListPanel title="Fact check" items={result.factCheck.map((x: any) => `${x.confidence}: ${x.claim} — ${x.note}`)} /></div>; }
+const TextPanel = ({ title, body }: { title: string; body: string }) => <div className="panel"><h3>{title}</h3><pre>{body}</pre></div>;
+const ListPanel = ({ title, items }: { title: string; items: string[] }) => <div className="panel"><h3>{title}</h3><ul>{items.map((item, i) => <li key={`${i}-${item}`}>{item}</li>)}</ul></div>;
