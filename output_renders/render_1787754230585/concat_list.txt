@@ -1,0 +1,7 @@
+file 'C:/Users/giova/Desktop/progetto tech/web-dashboard/output_renders/render_1787754230585/clip_1.mp4'
+file 'C:/Users/giova/Desktop/progetto tech/web-dashboard/output_renders/render_1787754230585/clip_2.mp4'
+file 'C:/Users/giova/Desktop/progetto tech/web-dashboard/output_renders/render_1787754230585/clip_3.mp4'
+file 'C:/Users/giova/Desktop/progetto tech/web-dashboard/output_renders/render_1787754230585/clip_4.mp4'
+file 'C:/Users/giova/Desktop/progetto tech/web-dashboard/output_renders/render_1787754230585/clip_5.mp4'
+file 'C:/Users/giova/Desktop/progetto tech/web-dashboard/output_renders/render_1787754230585/clip_6.mp4'
+file 'C:/Users/giova/Desktop/progetto tech/web-dashboard/output_renders/render_1787754230585/clip_7.mp4'

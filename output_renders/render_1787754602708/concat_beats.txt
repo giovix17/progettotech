@@ -1,0 +1,5 @@
+file 'C:/Users/giova/Desktop/progetto tech/web-dashboard/output_renders/render_1787754602708/beat_cut_1.mp4'
+file 'C:/Users/giova/Desktop/progetto tech/web-dashboard/output_renders/render_1787754602708/beat_cut_2.mp4'
+file 'C:/Users/giova/Desktop/progetto tech/web-dashboard/output_renders/render_1787754602708/beat_cut_3.mp4'
+file 'C:/Users/giova/Desktop/progetto tech/web-dashboard/output_renders/render_1787754602708/beat_cut_4.mp4'
+file 'C:/Users/giova/Desktop/progetto tech/web-dashboard/output_renders/render_1787754602708/beat_cut_5.mp4'

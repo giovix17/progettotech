@@ -59,17 +59,29 @@ export function countSpokenWords(text: string): number {
   return (text.replace(MARKERS, " ").match(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)?/gu) ?? []).length;
 }
 
+export function estimateSpeechDuration(text: string, language = "it", speakingRate = 155): number {
+  const words = countSpokenWords(text);
+  const localeAdjustment = language.toLowerCase().startsWith("it") ? 1 : 0.96;
+  const pauseBuffer = 0.05;
+  const durationInMinutes = (words / (speakingRate * localeAdjustment)) * (1 + pauseBuffer);
+  return Number((durationInMinutes * 60).toFixed(1));
+}
+
+export function calculateTargetWordCount(duration: number, speakingRate = 155, pauseBudget = 0): number {
+  const spokenSeconds = Math.max(1, duration - pauseBudget);
+  return Math.round((spokenSeconds / 60) * speakingRate);
+}
+
 export function createDurationBudget(
-  duration: number, 
-  speakingRate: SpeakingRate = "natural", 
+  duration: number,
+  speakingRate: SpeakingRate = "natural",
   contentType = "explainer",
   calibration?: CreatorCalibration
 ): DurationBudget {
   const pauseRatio = contentType === "news" || contentType === "ranking" ? 0.06 : contentType === "storytelling" ? 0.12 : 0.09;
   const pauseBudget = Math.round(duration * pauseRatio * 10) / 10;
-  const spokenSeconds = Math.max(1, duration - pauseBudget);
   const effectiveWpm = calibration ? calibration.averageWpm : BASE_WPM[speakingRate];
-  const targetWords = Math.round((spokenSeconds / 60) * effectiveWpm);
+  const targetWords = calculateTargetWordCount(duration, effectiveWpm, pauseBudget);
   const variance = Math.max(4, Math.round(targetWords * 0.1));
 
   return {
@@ -77,12 +89,12 @@ export function createDurationBudget(
     acceptableWordRange: { min: targetWords - variance, max: targetWords + variance },
     wpm: effectiveWpm,
     pauseBudget,
-    spokenSeconds,
+    spokenSeconds: duration - pauseBudget,
   };
 }
 
 export function computeBeatsTimeline(
-  beats: StoryBeat[], 
+  beats: StoryBeat[],
   speakingRate: SpeakingRate = "natural",
   calibration?: CreatorCalibration
 ) {
@@ -91,7 +103,7 @@ export function computeBeatsTimeline(
   const enrichedBeats = beats.map((beat, index) => {
     const words = countSpokenWords(beat.spokenText);
     const config = BEAT_PACE_MODIFIERS[beat.type] || { wpmFactor: 1.0, pauseSec: 0.4 };
-    
+
     let effectiveWpm = BASE_WPM[speakingRate] * config.wpmFactor;
     if (calibration) {
       if (beat.type === "hook") effectiveWpm = calibration.hookWpm;
@@ -123,6 +135,26 @@ export function computeBeatsTimeline(
     totalCalculatedDuration: Number(currentTime.toFixed(1)),
     totalWords: enrichedBeats.reduce((sum, b) => sum + (b.wordCount || 0), 0),
   };
+}
+
+export function validateScriptDuration(
+  script: string,
+  targetDuration: number,
+  language = "it",
+  speakingRate = 155
+) {
+  const estimatedDuration = estimateSpeechDuration(script, language, speakingRate);
+  const deviation = Number((((estimatedDuration - targetDuration) / targetDuration) * 100).toFixed(1));
+  const isValid = Math.abs(deviation) <= 10;
+  return {
+    isValid,
+    estimatedDuration,
+    deviation,
+    status: isValid ? "within-target" : estimatedDuration > targetDuration ? "too-long" : "too-short",
+    message: isValid
+      ? `✅ Dentro il target (${targetDuration}s).`
+      : `⚠️ Fuori target (${targetDuration}s). Scostamento del ${deviation}%.`,
+  } as const;
 }
 
 export function validateBeatsDuration(totalDuration: number, targetDuration: number) {

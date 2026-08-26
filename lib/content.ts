@@ -51,8 +51,8 @@ export interface ProductionTask {
 export interface VideoAnalytics {
   views: number;
   watchTimeSec: number;
-  completionRate: number; // 0 - 100%
-  retention3s: number;    // 0 - 100%
+  completionRate: number;
+  retention3s: number;
   shares: number;
   saves: number;
   comments: number;
@@ -86,6 +86,73 @@ export interface PerformanceLearnings {
   topPerformingPillar: string;
   averageCompletionRate: number;
   insights: string[];
+}
+
+export interface SoundEffectCue {
+  id: string;
+  timestampSec: number;
+  sfxType: "whoosh" | "glitch" | "riser" | "pop" | "sub-drop" | "impact";
+  reason: string;
+  volumePercent: number;
+}
+
+export interface PacingPoint {
+  second: number;
+  energyLevel: number;
+  beatType: string;
+  riskOfDrop: boolean;
+  recommendation: string;
+}
+
+export interface PacingReport {
+  recommendedMusicBpm: number;
+  musicGenre: string;
+  averageEnergy: number;
+  curve: PacingPoint[];
+  sfxTimeline: SoundEffectCue[];
+}
+
+export interface CarouselSlide {
+  slideNumber: number;
+  totalSlides: number;
+  type: "cover" | "point" | "reveal" | "cta";
+  headline: string;
+  body: string;
+  visualPrompt: string;
+}
+
+export interface RepurposedFormats {
+  carouselSlides: CarouselSlide[];
+  socialThread: string[];
+  newsletterSection: string;
+}
+
+export interface VisualContinuityPlan {
+  shotScale: "close-up" | "medium" | "extreme-close-up" | "b-roll-fullscreen";
+  zoomFactor: "1.0x" | "1.2x" | "1.5x";
+  eyeLine: "direct-camera" | "slightly-off" | "looking-down-at-device";
+  handPosition: "resting" | "holding-device" | "pointing-gesture" | "open-palms";
+  cutTransitionReason: string;
+  safeZonePlacement: "top-35-center" | "middle-center" | "lower-middle";
+}
+
+export interface PlatformPublishingItem {
+  platform: "tiktok" | "reels" | "shorts";
+  titleOrHook: string;
+  caption: string;
+  hashtags: string[];
+  ctaStrategy: string;
+  firstCommentPrompt?: string;
+}
+
+export interface TrendNewsItem {
+  id: string;
+  headline: string;
+  sourceOrEntity: string;
+  freshnessHours: number;
+  summary: string;
+  suggestedAngle: string;
+  suggestedPillar: ContentPillar;
 }
 
 export interface ContentGenerationInput {
@@ -134,11 +201,10 @@ export function computePerformanceLearnings(history: ContentMemory[]): Performan
       optimalDurationRange: "25-35s",
       topPerformingPillar: "Tech & Gadget",
       averageCompletionRate: 0,
-      insights: ["Nessun dato analitico disponibile. Inserisci le visualizzazioni e retention dei video pubblicati per abilitare il Creator Learning Engine."]
+      insights: ["Nessun dato analitico disponibile. Inserisci le metriche per abilitare l'apprendimento."]
     };
   }
 
-  // 1. Hook con retention 3s più alta
   const hookStats: Record<string, { totalRet: number; count: number }> = {};
   tracked.forEach((t) => {
     const type = t.hookType || "curiosity";
@@ -157,7 +223,6 @@ export function computePerformanceLearnings(history: ContentMemory[]): Performan
     }
   });
 
-  // 2. Pillar con più completion rate
   const pillarStats: Record<string, { totalComp: number; count: number }> = {};
   tracked.forEach((t) => {
     if (!pillarStats[t.pillar]) pillarStats[t.pillar] = { totalComp: 0, count: 0 };
@@ -177,18 +242,16 @@ export function computePerformanceLearnings(history: ContentMemory[]): Performan
 
   const avgCompletion = Math.round(tracked.reduce((acc, t) => acc + t.analytics!.completionRate, 0) / tracked.length);
 
-  const insights = [
-    `Gli hook "${bestHookType}" registrano la retention a 3s più alta (~${Math.round(maxHookRet)}%).`,
-    `Il pillar "${topPerformingPillar}" genera il completion rate medio più alto (~${Math.round(maxPillarComp)}%).`,
-    `Completion rate medio complessivo del canale: ${avgCompletion}%.`
-  ];
-
   return {
     bestHookType,
     optimalDurationRange: "25-35s",
     topPerformingPillar,
     averageCompletionRate: avgCompletion,
-    insights
+    insights: [
+      `Gli hook "${bestHookType}" hanno registrato la retention 3s migliore (~${Math.round(maxHookRet)}%).`,
+      `Il pillar "${topPerformingPillar}" mantiene il completion rate medio più alto (~${Math.round(maxPillarComp)}%).`,
+      `Completamento medio complessivo: ${avgCompletion}%.`
+    ]
   };
 }
 
@@ -206,7 +269,7 @@ export function auditContentMemory(newTopic: string, selectedPillar: string, his
 
     if (similarity > maxSimilarity) maxSimilarity = similarity;
     if (similarity >= 0.6) {
-      warnings.push(`Argomento simile a: "${item.topic}" (Angle: "${item.angle}"). Considera un angle diverso.`);
+      warnings.push(`Argomento simile a: "${item.topic}" (Angle: "${item.angle}"). Valuta un angle alternativo.`);
     }
   }
 
@@ -219,7 +282,7 @@ export function auditContentMemory(newTopic: string, selectedPillar: string, his
   const totalHistory = history.length;
   const currentPillarCount = pillarDistribution[selectedPillar] || 0;
   if (totalHistory >= 3 && currentPillarCount / totalHistory > 0.5) {
-    warnings.push(`Stai usando spesso "${selectedPillar}" (${Math.round((currentPillarCount / totalHistory) * 100)}% dei video).`);
+    warnings.push(`Stai usando spesso il pillar "${selectedPillar}" (${Math.round((currentPillarCount / totalHistory) * 100)}% totale).`);
   }
 
   return {
